@@ -18,8 +18,8 @@
       --correct:   #3a7a33;
       --present-t: #fff8ec;
       --correct-t: #efffec;
-      --toast-bg:  #1a1a1a;
-      --toast-fg:  #f5f5f0;
+      --toast-bg:  #f5f5f0;
+      --toast-fg:  #1a1a1a;
       --toggle-bg: #ddddd8;
     }
 
@@ -118,8 +118,8 @@
       --correct:   #2d5a27;
       --present-t: #d4972e;
       --correct-t: #4daa45;
-      --toast-bg:  #e8e8e6;
-      --toast-fg:  #0e0e0f;
+      --toast-bg:  #0e0e0f;
+      --toast-fg:  #e8e8e6;
       --toggle-bg: #2a2a2e;
     }
 
@@ -139,6 +139,7 @@
       transform: translateX(-50%) translateY(-6px);
       background: var(--toast-bg);
       color: var(--toast-fg);
+      border: 1px solid var(--border);
       font-family: 'DM Mono', monospace;
       font-size: 0.7rem;
       font-weight: 500;
@@ -1074,7 +1075,10 @@
       clearTimeout(toastTmr);
       toastEl.textContent = msg;
       toastEl.classList.add('show');
-      toastTmr = setTimeout(() => toastEl.classList.remove('show'), ms);
+
+      if (ms > 0) {
+        toastTmr = setTimeout(() => toastEl.classList.remove('show'), ms);
+      }
     }
 
     function escapeHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -1088,7 +1092,7 @@
       defEl.classList.add('show');
       
       defEl.innerHTML = `<div class="def-text">${escapeHtml(word.toUpperCase())}</div>` +
-                        `<div class="def-actions"><button id="def-google">Define</button><button id="def-continue">Continue</button></div>`;
+                        `<div class="def-actions"><button id="def-google">DEFINE</button><button id="def-continue">CONTINUE</button></div>`;
 
       const gBtn = document.getElementById('def-google');
       const cBtn = document.getElementById('def-continue');
@@ -1097,6 +1101,8 @@
       });
 
       if (cBtn) cBtn.addEventListener('click', () => {
+        clearTimeout(toastTmr);
+        toastEl.classList.remove('show');
         defEl.classList.remove('show');
         startGame();
       });
@@ -1178,18 +1184,20 @@
         const won = guess === targetWord;
 
         if (won) {
-          score++;
+          const tries = currentRow + 1;
+          const points = ROWS - currentRow;
+          score += points;
           saveScore();
           updateScore();
           usedWords.push(targetWord);
           localStorage.setItem('wrdl_used', JSON.stringify(usedWords));
           fetchDefinition(targetWord);
           bounceRow(currentRow, () => {
-            toast('+1 — NICE', 1200);
+            toast(`${tries} ${tries === 1 ? 'TRY' : 'TRIES'} = ${points} ${points === 1 ? 'POINT' : 'POINTS'}`, 0);
           });
         } else if (currentRow === ROWS - 1) {
           fetchDefinition(targetWord);
-          toast(targetWord, 2400);
+          toast(targetWord, 0);
         } else {
           currentRow++;
           currentCol   = 0;
