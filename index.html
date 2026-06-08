@@ -394,6 +394,10 @@
       background: var(--border);
     }
 
+    .key.absent {
+      opacity: 0.35;
+    }
+
     .show-mobile-keyboard #keyboard {
       display: flex;
     }
@@ -1371,7 +1375,14 @@
         setTimeout(() => {
           cell.classList.remove('filled', 'pop');
           cell.classList.add('flipping');
-          setTimeout(() => cell.classList.add(results[i]), FLIP_DUR / 2);
+          setTimeout(() => {
+            cell.classList.add(results[i]);
+            const letter = getCellInner(row, i).textContent;
+            const keyEl = [...document.querySelectorAll('.key')].find(k => k.textContent === letter);
+            if (keyEl && !keyEl.classList.contains('correct') && !keyEl.classList.contains('present')) {
+              keyEl.classList.add(results[i]);
+            }
+          }, FLIP_DUR / 2);
           setTimeout(() => {
             cell.classList.remove('flipping');
             if (i === COLS - 1) onDone();
