@@ -73,14 +73,44 @@
 
     #win-fire {
       display: none;
-      font-size: 1rem;
+      position: relative;
+      width: 30px;
+      height: 30px;
+      font-size: 1.35rem;
       line-height: 1;
       flex-shrink: 0;
+      align-items: center;
+      justify-content: center;
     }
 
     #win-fire.show {
       display: inline-flex;
-      align-items: center;
+    }
+
+    #win-fire .fire-emoji {
+      display: block;
+      transform: translateY(1px);
+    }
+
+    #win-fire .streak-count {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -47%);
+      min-width: 16px;
+      height: 16px;
+      padding: 0 4px;
+      border-radius: 999px;
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      font-family: 'DM Mono', monospace;
+      font-size: 0.58rem;
+      font-weight: 700;
+      line-height: 14px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
     }
 
     #score-display {
@@ -478,7 +508,10 @@
   <header>
     <h1>WORDLE</h1>
     <div class="header-right">
-      <span id="win-fire" aria-label="Won once" title="Won once">🔥</span>
+      <span id="win-fire" aria-live="polite" aria-label="No winning streak" title="No winning streak">
+        <span class="fire-emoji" aria-hidden="true">🔥</span>
+        <span id="streak-count" class="streak-count">0</span>
+      </span>
       <div id="score-display"><b id="score-val">0</b> <span class="pts-label">pts</span></div>
       <button id="hint-btn" aria-label="Get a hint for 5 points">
         <span class="hint-cost">−5</span>
@@ -1092,7 +1125,8 @@
     let locked = false;
     let score = parseInt(localStorage.getItem('wrdl_score') || '0', 10);
     let usedWords = JSON.parse(localStorage.getItem('wrdl_used') || '[]');
-    let wonOnce = localStorage.getItem('wrdl_won_once') === '1';
+    let streak = parseInt(localStorage.getItem('wrdl_streak') || (localStorage.getItem('wrdl_won_once') === '1' ? '1' : '0'), 10);
+    if (!Number.isFinite(streak) || streak < 0) streak = 0;
 
     const gridEl = document.getElementById('grid');
     const scoreEl = document.getElementById('score-val');
@@ -1101,6 +1135,7 @@
     const toggleEl = document.getElementById('theme-toggle');
     const keyboardEl = document.getElementById('keyboard');
     const winFireEl = document.getElementById('win-fire');
+    const streakCountEl = document.getElementById('streak-count');
     let toastTmr = null;
     const MOBILE_QUERY = window.matchMedia('(max-width: 700px), (pointer: coarse)');
 
@@ -1249,14 +1284,19 @@
     function updateScore() { scoreEl.textContent = score; }
     function saveScore() { localStorage.setItem('wrdl_score', score); }
 
-    function setWonOnce(value) {
-      wonOnce = value;
-      localStorage.setItem('wrdl_won_once', wonOnce ? '1' : '0');
+    function setStreak(value) {
+      streak = Math.max(0, value);
+      localStorage.setItem('wrdl_streak', String(streak));
+      localStorage.setItem('wrdl_won_once', streak > 0 ? '1' : '0');
       updateWinFire();
     }
 
     function updateWinFire() {
-      winFireEl.classList.toggle('show', wonOnce);
+      const hasStreak = streak > 0;
+      winFireEl.classList.toggle('show', hasStreak);
+      streakCountEl.textContent = streak;
+      winFireEl.setAttribute('aria-label', hasStreak ? `${streak} word winning streak` : 'No winning streak');
+      winFireEl.title = hasStreak ? `${streak} word winning streak` : 'No winning streak';
     }
 
     function pickWord() {
@@ -1349,13 +1389,13 @@
           updateScore();
           usedWords.push(targetWord);
           localStorage.setItem('wrdl_used', JSON.stringify(usedWords));
-          setWonOnce(true);
+          setStreak(streak + 1);
           fetchDefinition(targetWord);
           bounceRow(currentRow, () => {
             toast(`${tries} ${tries === 1 ? 'TRY' : 'TRIES'} = ${points} ${points === 1 ? 'POINT' : 'POINTS'}`, 0);
           });
         } else if (currentRow === ROWS - 1) {
-          setWonOnce(false);
+          setStreak(0);
           fetchDefinition(targetWord);
           toast(targetWord, 0);
         } else {
