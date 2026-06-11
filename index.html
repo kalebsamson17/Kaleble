@@ -1318,6 +1318,12 @@
       return pool[Math.floor(Math.random() * pool.length)];
     }
 
+    function resetKeyboard() {
+      document.querySelectorAll('.key').forEach(key => {
+        key.classList.remove('absent', 'present', 'correct');
+      });
+    }
+
     function startGame() {
       targetWord   = pickWord();
       currentRow   = 0;
@@ -1326,6 +1332,7 @@
       locked       = false;
       hintUsedThisRow = false;
       buildGrid();
+      resetKeyboard();
       updateScore();
       updateWinFire();
       updateHintBtn();
